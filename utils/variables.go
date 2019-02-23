@@ -15,6 +15,9 @@ var InsideDomain string
 var Kubernetesapiurl string
 var Blacklist map[string]bool
 var Client rest.Interface
+var Regionapilocation string
+var Regionapiusername string
+var Regionapipassword string
 
 func SetSecrets() {
 
@@ -22,6 +25,11 @@ func SetSecrets() {
 	DefaultDomain = os.Getenv("DEFAULT_DOMAIN")
 	InsideDomain = os.Getenv("INSIDE_DOMAIN")
 	Kubernetesapiurl = os.Getenv("KUBERNETES_API_SERVER")
+        regionapisecret := os.Getenv("REGIONAPI_SECRET")
+        Regionapiusername = vault.GetField(regionapisecret, "username")
+        Regionapipassword = vault.GetField(regionapisecret, "password")
+        Regionapilocation = os.Getenv("REGIONAPI_URL")
+
 	initBlacklist()
 }
 
