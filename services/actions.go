@@ -11,6 +11,11 @@ import (
         utils "service-watcher-istio/utils"
 )
 
+type Spacespec struct {
+        Name     string `json:"name"}`
+        Internal bool   `json:"internal"}`
+}
+
 type Virtualservice struct {
 	APIVersion string `json:"apiVersion"`
 	Kind       string `json:"kind"`
@@ -75,7 +80,6 @@ func InstallGatewayVirtualservice(obj interface{}) {
         servicename := obj.(*corev1.Service).ObjectMeta.Name
         namespace := obj.(*corev1.Service).ObjectMeta.Namespace
         port :=   80
-	AddLabel(namespace)
 	InstallGateway(servicename, namespace)
 	InstallVirtualService(servicename, namespace, port)
 
@@ -97,7 +101,7 @@ func InstallGateway(servicename string, namespace string) {
 	}
 	var url string
 	var pp string
-	internal := false
+	internal := isInternal(namespace)
 	if internal {
 		url = appname + "." +utils.InsideDomain
 		pp = "private"
@@ -189,7 +193,7 @@ func InstallVirtualService(servicename string, namespace string, port int) {
 		appname = servicename
 	}
 	var url string
-	internal := false
+	internal := isInternal(namespace)
 	if internal {
 		url = appname + "." + utils.InsideDomain
 	}
@@ -309,3 +313,30 @@ func AddLabel(namespace string) {
 	fmt.Println(string(bodybytes))
 	fmt.Println("install label response: " + resp.Status)
 }
+
+func isInternal(space string) bool {
+
+        req, err := http.NewRequest("GET", utils.Regionapilocation+"/v1/space/"+space, nil)
+        req.SetBasicAuth(utils.Regionapiusername, utils.Regionapipassword)
+        if err != nil {
+                fmt.Println(err)
+        }
+        tr := &http.Transport{
+                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+        }
+        client := &http.Client{Transport: tr}
+        resp, err := client.Do(req)
+        if err != nil {
+                fmt.Println(err)
+        }
+        defer resp.Body.Close()
+        bb, err := ioutil.ReadAll(resp.Body)
+        var spaceobject Spacespec
+        uerr := json.Unmarshal(bb, &spaceobject)
+        if uerr != nil {
+                fmt.Println(uerr)
+        }
+        fmt.Printf("ISINTERNAL: %v\n",spaceobject.Internal)
+        return spaceobject.Internal
+}
+
