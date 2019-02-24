@@ -125,8 +125,14 @@ func InstallGateway(servicename string, namespace string) {
 	s1.Port.Protocol = "HTTPS"
 	s1.TLS.CredentialName = "apps-" + pp + "-certificate"
 	s1.TLS.Mode = "SIMPLE"
-	s1.TLS.PrivateKey = "/etc/istio/apps-public-certificate/tls.key"
-	s1.TLS.ServerCertificate = "/etc/istio/apps-public-certificate/tls.crt"
+        if internal {
+  	   s1.TLS.PrivateKey = "/etc/istio/apps-private-certificate/tls.key"
+	   s1.TLS.ServerCertificate = "/etc/istio/apps-private-certificate/tls.crt"
+        }
+        if !internal {
+           s1.TLS.PrivateKey = "/etc/istio/apps-public-certificate/tls.key"
+           s1.TLS.ServerCertificate = "/etc/istio/apps-public-certificate/tls.crt"
+        }
 	g.Spec.Servers = append(g.Spec.Servers, s1)
 
 	s2.Hosts = append(s2.Hosts, url)
