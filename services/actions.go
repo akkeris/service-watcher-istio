@@ -37,7 +37,7 @@ type Routespec struct {
 	Destination struct {
 		Host string `json:"host"`
 		Port struct {
-			Number int `json:"number"`
+			Number int32 `json:"number"`
 		} `json:"port"`
 	} `json:"destination"`
 }
@@ -79,7 +79,7 @@ func InstallGatewayVirtualservice(obj interface{}) {
 
         servicename := obj.(*corev1.Service).ObjectMeta.Name
         namespace := obj.(*corev1.Service).ObjectMeta.Namespace
-        port :=   80
+        port := obj.(*corev1.Service).Spec.Ports[0].Port
 	InstallGateway(servicename, namespace)
 	InstallVirtualService(servicename, namespace, port)
 
@@ -95,6 +95,7 @@ func DeleteGatewayVirtualservice(obj interface{}) {
 
 }
 func InstallGateway(servicename string, namespace string) {
+
 	appname := servicename + "-" + namespace
 	if namespace == "default" {
 		appname = servicename
@@ -192,7 +193,7 @@ func DeleteGateway(servicename string, namespace string){
         defer resp.Body.Close()
         fmt.Println("delete gateway response: " + resp.Status)
 }
-func InstallVirtualService(servicename string, namespace string, port int) {
+func InstallVirtualService(servicename string, namespace string, port int32) {
 
 	appname := servicename + "-" + namespace
 	if namespace == "default" {
