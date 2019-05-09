@@ -16,6 +16,17 @@ type Spacespec struct {
         Internal bool   `json:"internal"}`
 }
 
+type HeaderOperationsspec struct {
+	Set map[string]string `json:"set,omitempty"`
+	Add map[string]string `json:"add,omitempty"`
+	Remove []string		  `json:"remove,omitempty"`
+}
+
+type Headersspec struct {
+	Request HeaderOperationsspec `json:"request,omitempty"`
+	Response HeaderOperationsspec `json:"response,omitempty"`
+}
+
 type Virtualservice struct {
 	APIVersion string `json:"apiVersion"`
 	Kind       string `json:"kind"`
@@ -32,6 +43,7 @@ type Virtualservice struct {
 
 type HTTPSpec struct {
 	Route []Routespec `json:"route"`
+	Headers Headersspec `json:"headers,omitempty"`
 }
 type Routespec struct {
 	Destination struct {
@@ -96,6 +108,10 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 	routes = append(routes, r)
 	var h HTTPSpec
 	h.Route = routes
+	if h.Headers.Response.Set == nil {
+		h.Headers.Response.Set = make(map[string]string)
+	}
+	h.Headers.Response.Set["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 	v.Spec.HTTP = append(v.Spec.HTTP, h)
 
 	virtualservice, err := json.Marshal(v)
