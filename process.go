@@ -26,7 +26,7 @@ func main() {
 	if os.Getenv("PROFILE") == "true" {
 		fmt.Println("Starting profiler...")
 		_ = stackimpact.Start(stackimpact.Options{
-			AgentKey:       "e4795df33a4002d0ddd7952dd8a8138c8312a449",
+			AgentKey:       os.Getenv("STACK_IMPACT_TOKEN"),
 			AppName:        "Service Watcher",
 			AppEnvironment: os.Getenv("CLUSTER"),
 		})
