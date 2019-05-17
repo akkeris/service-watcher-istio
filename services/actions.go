@@ -118,7 +118,6 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("VIRTUALSERVICE: " + string(virtualservice))
 
 	req, err := http.NewRequest("POST", "https://"+utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices", bytes.NewBuffer(virtualservice))
 	if err != nil {
