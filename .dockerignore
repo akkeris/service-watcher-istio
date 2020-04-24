@@ -1,7 +1,8 @@
 config
 exports.sh
 test.go
-service-watcher-istio
+bs1.sh
 maru.sh
 maru.env
-bs1.sh
+service-watcher-istio
+
