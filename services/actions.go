@@ -120,7 +120,7 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 	}
 	fmt.Println("VIRTUALSERVICE: " + string(virtualservice))
 
-	req, err := http.NewRequest("POST", "https://"+utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices", bytes.NewBuffer(virtualservice))
+	req, err := http.NewRequest("POST", utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices", bytes.NewBuffer(virtualservice))
 	if err != nil {
 		fmt.Println("Error creating request")
 		fmt.Println(err)
@@ -143,7 +143,7 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 }
 
 func DeleteVirtualservice(servicename string, namespace string, vsnamespace string){
-        req, err := http.NewRequest("DELETE", "https://"+utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices/"+servicename+"-"+namespace, nil)
+        req, err := http.NewRequest("DELETE", utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices/"+servicename+"-"+namespace, nil)
         if err != nil {
                 fmt.Println("Error creating request")
                 fmt.Println(err)

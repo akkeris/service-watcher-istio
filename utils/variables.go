@@ -6,7 +6,6 @@ import (
 	"strings"
 	"fmt"
 	"k8s.io/client-go/rest"
-        vault "github.com/akkeris/vault-client"
 )
 
 var Kubetoken string
@@ -21,13 +20,12 @@ var Regionapipassword string
 
 func SetSecrets() {
 
-	Kubetoken = vault.GetField(os.Getenv("KUBERNETES_TOKEN_VAULT_PATH"), "token")
+	Kubetoken = os.Getenv("KUBERNETES_TOKEN")
 	DefaultDomain = os.Getenv("DEFAULT_DOMAIN")
 	InsideDomain = os.Getenv("INSIDE_DOMAIN")
 	Kubernetesapiurl = os.Getenv("KUBERNETES_API_SERVER")
-        regionapisecret := os.Getenv("REGIONAPI_SECRET")
-        Regionapiusername = vault.GetField(regionapisecret, "username")
-        Regionapipassword = vault.GetField(regionapisecret, "password")
+        Regionapiusername = os.Getenv("REGIONAPI_USERNAME")
+        Regionapipassword = os.Getenv("REGIONAPI_PASSWORD")
         Regionapilocation = os.Getenv("REGIONAPI_URL")
 
 	initBlacklist()

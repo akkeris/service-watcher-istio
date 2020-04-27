@@ -13,7 +13,7 @@ import (
 const tokenconfigtemplate = `apiVersion: v1
 clusters:
 - cluster:
-    server: https://{{ .Apiserverurl }}
+    server: {{ .Apiserverurl }}
   name: {{ .Cluster }}
 contexts:
 - context:
@@ -33,7 +33,7 @@ const certconfigtemplate = `apiVersion: v1
 clusters:
 - cluster:
     certificate-authority: ca.pem
-    server: https://{{ .Apiserverurl }}
+    server: {{ .Apiserverurl }}
   name: {{ .Cluster }}
 contexts:
 - context:

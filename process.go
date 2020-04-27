@@ -44,7 +44,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	utils.Client = clientset.Core().RESTClient()
+	utils.Client = clientset.CoreV1().RESTClient()
 	listWatch := cache.NewListWatchFromClient(
 		utils.Client, "services", "",
 		fields.Everything())
@@ -53,7 +53,7 @@ func main() {
 		return utils.Client.Get().Namespace("none").Resource("services").Do().Get()
 	}
 	listWatch.WatchFunc = func(options api.ListOptions) (watch.Interface, error) {
-		return clientset.Core().Services(api.NamespaceAll).Watch(v1.ListOptions{})
+		return clientset.CoreV1().Services(api.NamespaceAll).Watch(v1.ListOptions{})
 	}
 
 	_, controller := cache.NewInformer(
