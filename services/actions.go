@@ -7,23 +7,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-        corev1 "k8s.io/api/core/v1"
-        utils "service-watcher-istio/utils"
+	utils "service-watcher-istio/utils"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Spacespec struct {
-        Name     string `json:"name"}`
-        Internal bool   `json:"internal"}`
+	Name     string `json:"name"}`
+	Internal bool   `json:"internal"}`
 }
 
 type HeaderOperationsspec struct {
-	Set map[string]string `json:"set,omitempty"`
-	Add map[string]string `json:"add,omitempty"`
-	Remove []string		  `json:"remove,omitempty"`
+	Set    map[string]string `json:"set,omitempty"`
+	Add    map[string]string `json:"add,omitempty"`
+	Remove []string          `json:"remove,omitempty"`
 }
 
 type Headersspec struct {
-	Request HeaderOperationsspec `json:"request,omitempty"`
+	Request  HeaderOperationsspec `json:"request,omitempty"`
 	Response HeaderOperationsspec `json:"response,omitempty"`
 }
 
@@ -42,7 +43,7 @@ type Virtualservice struct {
 }
 
 type HTTPSpec struct {
-	Route []Routespec `json:"route"`
+	Route   []Routespec `json:"route"`
 	Headers Headersspec `json:"headers,omitempty"`
 }
 type Routespec struct {
@@ -54,26 +55,22 @@ type Routespec struct {
 	} `json:"destination"`
 }
 
-
-
 func InstallGatewayVirtualservice(obj interface{}) {
 
-
-        servicename := obj.(*corev1.Service).ObjectMeta.Name
-        namespace := obj.(*corev1.Service).ObjectMeta.Namespace
-        vsnamespace := "sites-system"
-        port := obj.(*corev1.Service).Spec.Ports[0].Port
+	servicename := obj.(*corev1.Service).ObjectMeta.Name
+	namespace := obj.(*corev1.Service).ObjectMeta.Namespace
+	vsnamespace := "sites-system"
+	port := obj.(*corev1.Service).Spec.Ports[0].Port
 	InstallVirtualService(servicename, namespace, port, vsnamespace)
 
 }
 
 func DeleteGatewayVirtualservice(obj interface{}) {
 
-
-        servicename := obj.(*corev1.Service).ObjectMeta.Name
-        namespace := obj.(*corev1.Service).ObjectMeta.Namespace
-	vsnamespace :="sites-system"
-        DeleteVirtualservice(servicename, namespace, vsnamespace)
+	servicename := obj.(*corev1.Service).ObjectMeta.Name
+	namespace := obj.(*corev1.Service).ObjectMeta.Namespace
+	vsnamespace := "sites-system"
+	DeleteVirtualservice(servicename, namespace, vsnamespace)
 
 }
 
@@ -84,22 +81,22 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 		appname = servicename
 	}
 	var url string
-        var gateway string
+	var gateway string
 	internal := isInternal(namespace)
 	if internal {
 		url = appname + "." + utils.InsideDomain
-                gateway = "apps-private"
+		gateway = "apps-private"
 	}
 	if !internal {
 		url = appname + "." + utils.DefaultDomain
-                gateway = "apps-public"
+		gateway = "apps-public"
 	}
 	var v Virtualservice
 	v.APIVersion = "networking.istio.io/v1alpha3"
 	v.Kind = "VirtualService"
 	v.Metadata.Name = servicename + "-" + namespace
 	v.Metadata.Namespace = vsnamespace
-	v.Spec.Gateways = append(v.Spec.Gateways, gateway )
+	v.Spec.Gateways = append(v.Spec.Gateways, gateway)
 	v.Spec.Hosts = append(v.Spec.Hosts, url)
 	var r Routespec
 	r.Destination.Host = servicename + "." + namespace + ".svc.cluster.local"
@@ -140,54 +137,71 @@ func InstallVirtualService(servicename string, namespace string, port int32, vsn
 	}
 	defer resp.Body.Close()
 	fmt.Println("install virtual service response: " + resp.Status)
+	if resp.StatusCode >= 500 && resp.StatusCode < 600 {
+		fmt.Println("Error installing virtual service")
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Unable to read error body")
+		} else {
+			fmt.Println(string(bodyBytes))
+		}
+	}
 }
 
-func DeleteVirtualservice(servicename string, namespace string, vsnamespace string){
-        req, err := http.NewRequest("DELETE", utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices/"+servicename+"-"+namespace, nil)
-        if err != nil {
-                fmt.Println("Error creating request")
-                fmt.Println(err)
-        }
-        req.Header.Add("Content-type", "application/json")
-        req.Header.Add("Authorization", "Bearer "+utils.Kubetoken)
-        tr := &http.Transport{
-                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-        }
-        client := &http.Client{Transport: tr}
+func DeleteVirtualservice(servicename string, namespace string, vsnamespace string) {
+	req, err := http.NewRequest("DELETE", utils.Kubernetesapiurl+"/apis/networking.istio.io/v1alpha3/namespaces/"+vsnamespace+"/virtualservices/"+servicename+"-"+namespace, nil)
+	if err != nil {
+		fmt.Println("Error creating request")
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+utils.Kubetoken)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
-        resp, doerr := client.Do(req)
-        fmt.Printf("%+v\n", resp)
-        if doerr != nil {
-                fmt.Println("Do error")
-                fmt.Println(doerr)
-        }
-        defer resp.Body.Close()
-        fmt.Println("delete virtual service response: " + resp.Status)
-  }
+	resp, doerr := client.Do(req)
+	fmt.Printf("%+v\n", resp)
+	if doerr != nil {
+		fmt.Println("Do error")
+		fmt.Println(doerr)
+	}
+	defer resp.Body.Close()
+	fmt.Println("delete virtual service response: " + resp.Status)
+	if resp.StatusCode >= 500 && resp.StatusCode < 600 {
+		fmt.Println("Error deleting virtual service")
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Unable to read error body")
+		} else {
+			fmt.Println(string(bodyBytes))
+		}
+	}
+}
 
 func isInternal(space string) bool {
 
-        req, err := http.NewRequest("GET", utils.Regionapilocation+"/v1/space/"+space, nil)
-        req.SetBasicAuth(utils.Regionapiusername, utils.Regionapipassword)
-        if err != nil {
-                fmt.Println(err)
-        }
-        tr := &http.Transport{
-                TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-        }
-        client := &http.Client{Transport: tr}
-        resp, err := client.Do(req)
-        if err != nil {
-                fmt.Println(err)
-        }
-        defer resp.Body.Close()
-        bb, err := ioutil.ReadAll(resp.Body)
-        var spaceobject Spacespec
-        uerr := json.Unmarshal(bb, &spaceobject)
-        if uerr != nil {
-                fmt.Println(uerr)
-        }
-        fmt.Printf("ISINTERNAL: %v\n",spaceobject.Internal)
-        return spaceobject.Internal
+	req, err := http.NewRequest("GET", utils.Regionapilocation+"/v1/space/"+space, nil)
+	req.SetBasicAuth(utils.Regionapiusername, utils.Regionapipassword)
+	if err != nil {
+		fmt.Println(err)
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	bb, err := ioutil.ReadAll(resp.Body)
+	var spaceobject Spacespec
+	uerr := json.Unmarshal(bb, &spaceobject)
+	if uerr != nil {
+		fmt.Println(uerr)
+	}
+	fmt.Printf("ISINTERNAL: %v\n", spaceobject.Internal)
+	return spaceobject.Internal
 }
-
