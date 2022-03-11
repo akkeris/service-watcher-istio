@@ -3,10 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	k8sconfig "service-watcher-istio/k8sconfig"
+	services "service-watcher-istio/services"
+	utils "service-watcher-istio/utils"
+	"time"
+
 	"github.com/stackimpact/stackimpact-go"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	api "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -14,11 +20,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	k8sconfig "service-watcher-istio/k8sconfig"
-	services "service-watcher-istio/services"
-	utils "service-watcher-istio/utils"
-	"time"
 )
 
 func main() {
@@ -75,7 +76,7 @@ func printEventAdd(obj interface{}) {
 		now := v1.Now().Unix()
 
 		diff := now - created
-		if diff < 300 && !Blacklisted(obj.(*corev1.Service).ObjectMeta.Namespace) {
+		if diff < 300 && !Blacklisted(obj.(*corev1.Service).ObjectMeta.Namespace) && !Ignored(obj.(*corev1.Service).ObjectMeta.Labels) {
 			fmt.Println("ADD")
 			var err error
 
@@ -95,18 +96,27 @@ func Blacklisted(namespace string) bool {
 
 }
 
+func Ignored(labels map[string]string) bool {
+	for label := range labels {
+		if utils.IgnoreList[label] {
+			return true
+		}
+	}
+	return false
+}
+
 func printEventDelete(obj interface{}) {
 	fmt.Println("DELETE")
 	_, isService := obj.(*corev1.Service)
 	if isService {
-		if !Blacklisted(obj.(*corev1.Service).ObjectMeta.Namespace) {
+		if !Blacklisted(obj.(*corev1.Service).ObjectMeta.Namespace) && !Ignored(obj.(*corev1.Service).ObjectMeta.Labels) {
 			var err error
 			_, err = json.Marshal(obj)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-                        services.DeleteGatewayVirtualservice(obj)
+			services.DeleteGatewayVirtualservice(obj)
 		}
 	}
 
